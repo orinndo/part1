@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Audio Guide (QR 1枚)</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Segoe UI", sans-serif; margin: 18px; line-height: 1.6; }
+  h1 { margin: 0 0 6px; font-size: 22px; }
+  .sub { margin: 0 0 14px; color: #555; font-size: 14px; }
+  .panel { border: 1px solid #ddd; border-radius: 14px; padding: 14px; background: #fafafa; }
+  .label { font-size: 12px; color:#666; margin: 0 0 6px; }
+  .jp { font-size: 18px; font-weight: 700; margin: 0; }
+  .en { margin: 8px 0 0; font-size: 16px; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top: 12px; }
+  button { font-size: 18px; padding: 12px 16px; border-radius: 12px; border: 1px solid #ccc; background: #fff; }
+  select { font-size: 16px; padding: 10px 12px; border-radius: 12px; border: 1px solid #ccc; background: #fff; min-width: 220px; }
+  .status { margin-top: 10px; color:#444; }
+  .note { font-size: 12px; color:#666; margin-top: 10px; }
+  .badge { display:inline-block; font-size:12px; padding: 2px 8px; border-radius: 999px; border:1px solid #ddd; background:#fff; color:#444; }
+</style>
+</head>
+<body>
+  <h1>音声ガイド / Audio Guide</h1>
+  <p class="sub">QR1枚で、音声を選んで再生できます（iPhoneは自動再生制限のため1タップ再生）。</p>
+
+  <div class="panel">
+    <div class="row">
+      <label class="badge">音声を選択 / Select</label>
+      <select id="sel"></select>
+    </div>
+
+    <div style="margin-top: 12px;">
+      <div class="label">日本語（内容）</div>
+      <p class="jp" id="jp"></p>
+
+      <div class="label" style="margin-top:12px;">English (Script)</div>
+      <p class="en" id="en"></p>
+    </div>
+
+    <div class="row">
+      <button id="play">▶︎ 再生 / Play</button>
+      <button id="pause">⏸ 一時停止 / Pause</button>
+    </div>
+
+    <div class="status" id="status">待機中 / Ready</div>
+
+    <audio id="audio" preload="auto"></audio>
+
+    <div class="note">
+      ※ 「未登録」と表示される音声は、audio/audioXX.m4a を追加すると有効になります。<br>
+      Tip: Add missing files as <b>audio/audio02.m4a</b> ... <b>audio/audio17.m4a</b> to enable them.
+    </div>
+  </div>
+
+<script>
+const DATA = [{"id": 1, "en": "Our interpreter has already left for the day, so I will walk you through the test using an English guide.", "jp": "本日の通訳は終了しているため、英語のガイドを使って検査の説明をします。", "src": "audio/audio01.m4a", "available": true}, {"id": 2, "en": "Please let me know if anything is unclear.", "jp": "分からないことがあれば、いつでも言ってください。", "src": "audio/audio02.m4a", "available": false}, {"id": 3, "en": "Could you tell me your date of birth?", "jp": "生年月日を教えてください。", "src": "audio/audio03.m4a", "available": false}, {"id": 4, "en": "Do you have any heart devices in your chest, like a", "jp": "胸にペースメーカー、ICD、CRTなどの心臓デバイスは入っていますか？", "src": "audio/audio04.m4a", "available": false}, {"id": 5, "en": "Please sit on the bed and take off your shoes.", "jp": "ベッドに座って、靴を脱いでください。", "src": "audio/audio05.m4a", "available": false}, {"id": 6, "en": "Please lie on your back on the bed.", "jp": "ベッドの上で仰向けに寝てください。", "src": "audio/audio06.m4a", "available": false}, {"id": 7, "en": "Your head goes here, and your feet go there.", "jp": "頭はここ、足はあちらです。", "src": "audio/audio07.m4a", "available": false}, {"id": 8, "en": "Please stand up slowly and sit on the bed.", "jp": "ゆっくり立ち上がって、ベッドに座ってください。", "src": "audio/audio08.m4a", "available": false}, {"id": 9, "en": "I’ll put a slide board behind your back.", "jp": "背中の後ろにスライドボードを入れます。", "src": "audio/audio09.m4a", "available": false}, {"id": 10, "en": "Let me slide you onto the bed now.", "jp": "これからベッドへ移動します（滑らせて移します）。", "src": "audio/audio10.m4a", "available": false}, {"id": 11, "en": "[Audio 11]", "jp": "（日本語は後で追加できます）", "src": "audio/audio11.m4a", "available": false}, {"id": 12, "en": "[Audio 12]", "jp": "（日本語は後で追加できます）", "src": "audio/audio12.m4a", "available": false}, {"id": 13, "en": "[Audio 13]", "jp": "（日本語は後で追加できます）", "src": "audio/audio13.m4a", "available": false}, {"id": 14, "en": "[Audio 14]", "jp": "（日本語は後で追加できます）", "src": "audio/audio14.m4a", "available": false}, {"id": 15, "en": "[Audio 15]", "jp": "（日本語は後で追加できます）", "src": "audio/audio15.m4a", "available": false}, {"id": 16, "en": "[Audio 16]", "jp": "（日本語は後で追加できます）", "src": "audio/audio16.m4a", "available": false}, {"id": 17, "en": "[Audio 17]", "jp": "（日本語は後で追加できます）", "src": "audio/audio17.m4a", "available": false}];
+const sel = document.getElementById('sel');
+const jp = document.getElementById('jp');
+const en = document.getElementById('en');
+const audio = document.getElementById('audio');
+const status = document.getElementById('status');
+const playBtn = document.getElementById('play');
+const pauseBtn = document.getElementById('pause');
+
+function labelFor(item){
+  const tag = item.available ? "" : "（未登録）";
+  return `${String(item.id).padStart(2,'0')}. ${item.jp} / ${item.en} ${tag}`;
+}
+
+DATA.forEach((item, idx) => {
+  const opt = document.createElement('option');
+  opt.value = item.id;
+  opt.textContent = labelFor(item);
+  sel.appendChild(opt);
+});
+
+function load(id){
+  const item = DATA.find(x => x.id === Number(id));
+  jp.textContent = item.jp;
+  en.textContent = item.en;
+  audio.src = item.src;
+  playBtn.disabled = !item.available;
+  pauseBtn.disabled = !item.available;
+  status.textContent = item.available ? "待機中 / Ready" : "この音声は未登録です / Not added yet";
+}
+
+sel.addEventListener('change', e => load(e.target.value));
+
+playBtn.addEventListener('click', async () => {
+  try {
+    await audio.play();
+    status.textContent = "再生中 / Playing";
+  } catch (e) {
+    status.textContent = "再生できませんでした / Couldn't play";
+  }
+});
+
+pauseBtn.addEventListener('click', () => {
+  audio.pause();
+  status.textContent = "一時停止 / Paused";
+});
+
+audio.addEventListener('ended', () => {
+  status.textContent = "再生終了 / Finished";
+});
+
+load(1);
+</script>
+</body>
+</html>
